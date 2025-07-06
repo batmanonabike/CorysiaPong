@@ -91,16 +91,29 @@ export class MenuSystem {
 
   public showMainMenu(): void {
     this.currentState = 'main'
-    this.elements.menu.classList.remove('hidden')
-    this.elements.gameContainer.classList.add('hidden')
-    this.elements.joinForm.classList.add('hidden')
+    
+    // Use actual DOM elements instead of stored references
+    const menu = document.getElementById('menu')
+    const gameContainer = document.getElementById('game-container')
+    const joinForm = document.getElementById('join-form')
+    
+    if (menu) menu.classList.remove('hidden')
+    if (gameContainer) gameContainer.classList.add('hidden')
+    if (joinForm) joinForm.classList.add('hidden')
     this.clearMessages()
   }
 
   public showGame(): void {
     this.currentState = 'game'
-    this.elements.menu.classList.add('hidden')
-    this.elements.gameContainer.classList.remove('hidden')
+    
+    // Use actual DOM elements instead of stored references
+    const menu = document.getElementById('menu')
+    const gameContainer = document.getElementById('game-container')
+    
+    if (menu) menu.classList.add('hidden')
+    if (gameContainer) gameContainer.classList.remove('hidden')
+    
+    console.log('MenuSystem.showGame() called - switching to game view')
   }
 
   public showLoadingState(message: string): void {
@@ -118,16 +131,26 @@ export class MenuSystem {
   }
 
   public setConnectionStatus(message: string, type: 'loading' | 'error' | 'success' | 'info' = 'info'): void {
-    this.elements.connectionStatus.textContent = message
-    this.elements.connectionStatus.className = `connection-status ${type}`
+    const statusElement = document.getElementById('connection-status')
+    if (statusElement) {
+      statusElement.textContent = message
+      statusElement.className = `connection-status ${type}`
+    }
+    console.log(`Status: ${message} (${type})`)
   }
 
   public updateScore(player1Score: number, player2Score: number): void {
-    this.elements.score.textContent = `Player 1: ${player1Score} | Player 2: ${player2Score}`
+    const scoreElement = document.getElementById('score')
+    if (scoreElement) {
+      scoreElement.textContent = `Player 1: ${player1Score} | Player 2: ${player2Score}`
+    }
   }
 
   public updateConnectionStatus(status: string): void {
-    this.elements.connectionStatus.textContent = status
+    const statusElement = document.getElementById('connection-status')
+    if (statusElement) {
+      statusElement.textContent = status
+    }
   }
 
   public showWaitingForPlayers(): void {
