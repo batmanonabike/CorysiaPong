@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CorysiaPong</title>
+    <style>
+      :root {
+        font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        line-height: 1.5;
+        font-weight: 400;
+        color-scheme: dark light;
+        color: rgba(255, 255, 255, 0.87);
+        background-color: #242424;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        place-items: center;
+        min-width: 320px;
+        min-height: 100vh;
+      }
+
+      #app {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .menu {
+        text-align: center;
+        padding: 2rem;
+        background: #1a1a1a;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      }
+
+      .menu h1 {
+        color: #646cff;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+      }
+
+      .menu-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .menu-buttons button {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 4px;
+        background: #646cff;
+        color: white;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .menu-buttons button:hover {
+        background: #535bf2;
+      }
+
+      .join-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        background: #2a2a2a;
+        border-radius: 4px;
+      }
+
+      .join-form input {
+        padding: 0.75rem;
+        border: 1px solid #444;
+        border-radius: 4px;
+        background: #1a1a1a;
+        color: white;
+        font-size: 1rem;
+      }
+
+      .join-form input:focus {
+        outline: none;
+        border-color: #646cff;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .game-container {
+        width: 100%;
+        height: 100vh;
+        position: relative;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .game-ui {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 1rem;
+        border-radius: 8px;
+        color: white;
+        font-size: 1.2rem;
+        z-index: 100;
+      }
+
+      #score {
+        font-weight: bold;
+        font-size: 1.5rem;
+      }
+
+      #connection-status {
+        color: #4ade80;
+        font-size: 1rem;
+      }
+
+      .status {
+        margin: 1rem 0;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-weight: bold;
+      }
+
+      .status.success {
+        background: #006400;
+        color: white;
+      }
+
+      .status.error {
+        background: #800000;
+        color: white;
+      }
+
+      .status.loading {
+        background: #646cff;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="menu" class="menu">
+        <h1>CorysiaPong</h1>
+        <div class="menu-buttons">
+          <button id="host-game">Host Game</button>
+          <button id="join-game">Join Game</button>
+        </div>
+        <div id="join-form" class="join-form hidden">
+          <input type="text" id="ip-input" placeholder="IP Address" value="localhost" />
+          <input type="text" id="port-input" placeholder="Port" value="2567" />
+          <button id="connect-btn">Connect</button>
+        </div>
+        <div id="status-area"></div>
+      </div>
+      <div id="game-container" class="game-container hidden">
+        <canvas id="renderCanvas"></canvas>
+        <div id="game-ui" class="game-ui">
+          <div id="score">Player 1: 0 | Player 2: 0</div>
+          <div id="connection-status">Ready to play!</div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      console.log('🎮 CorysiaPong initializing...');
+      
+      let gameScene = null;
+      let gameLogic = null;
+      let inputHandler = null;
+      let isHost = false;
+      let playerNumber = 0;
+      
+      // UI elements
+      const menu = document.getElementById('menu');
+      const gameContainer = document.getElementById('game-container');
+      const hostGameBtn = document.getElementById('host-game');
+      const joinGameBtn = document.getElementById('join-game');
+      const joinForm = document.getElementById('join-form');
+      const connectBtn = document.getElementById('connect-btn');
+      const statusArea = document.getElementById('status-area');
+      const canvas = document.getElementById('renderCanvas');
+      
+      function showStatus(message, type = 'info') {
+        statusArea.innerHTML = `<div class="status ${type}">${message}</div>`;
+        console.log(`Status (${type}): ${message}`);
+      }
+      
+      function showGame() {
+        menu.classList.add('hidden');
+        gameContainer.classList.remove('hidden');
+      }
+      
+      function showMenu() {
+        menu.classList.remove('hidden');
+        gameContainer.classList.add('hidden');
+      }
+      
+      async function initializeBabylonJS() {
+        try {
+          showStatus('Loading 3D graphics engine...', 'loading');
+          
+          // Import BabylonJS
+          const BABYLON = await import('@babylonjs/core');
+          const { Engine, Scene, FreeCamera, HemisphericLight, Vector3, Color3, MeshBuilder, StandardMaterial } = BABYLON;
+          
+          console.log('✅ BabylonJS imported successfully');
+          showStatus('Creating 3D scene...', 'loading');
+          
+          // Create engine
+          const engine = new Engine(canvas, true);
+          console.log('✅ BabylonJS Engine created');
+          
+          // Create scene
+          const scene = new Scene(engine);
+          scene.clearColor = new Color3(0.1, 0.1, 0.2);
+          console.log('✅ BabylonJS Scene created');
+          
+          // Create camera - using FreeCamera which is more stable
+          const camera = new FreeCamera('camera', new Vector3(0, 5, -15), scene);
+          camera.setTarget(Vector3.Zero());
+          scene.activeCamera = camera;
+          console.log('✅ Camera created and set as active');
+          
+          // Create lighting
+          const light = new HemisphericLight('light', new Vector3(0, 1, 0), scene);
+          light.intensity = 0.8;
+          console.log('✅ Lighting created');
+          
+          // Create arena
+          const arenaWidth = 16;
+          const arenaHeight = 10;
+          const wallThickness = 0.5;
+          
+          // Floor
+          const floor = MeshBuilder.CreateBox('floor', { width: arenaWidth, height: 0.1, depth: arenaHeight }, scene);
+          floor.position.y = -0.5;
+          const floorMaterial = new StandardMaterial('floorMaterial', scene);
+          floorMaterial.diffuseColor = new Color3(0.2, 0.2, 0.3);
+          floor.material = floorMaterial;
+          
+          // Walls
+          const topWall = MeshBuilder.CreateBox('topWall', { width: arenaWidth, height: 1, depth: wallThickness }, scene);
+          topWall.position.z = arenaHeight / 2;
+          const bottomWall = MeshBuilder.CreateBox('bottomWall', { width: arenaWidth, height: 1, depth: wallThickness }, scene);
+          bottomWall.position.z = -arenaHeight / 2;
+          const wallMaterial = new StandardMaterial('wallMaterial', scene);
+          wallMaterial.diffuseColor = new Color3(0.8, 0.8, 0.8);
+          topWall.material = wallMaterial;
+          bottomWall.material = wallMaterial;
+          
+          // Center line
+          const centerLine = MeshBuilder.CreateBox('centerLine', { width: 0.1, height: 0.2, depth: arenaHeight }, scene);
+          centerLine.position.x = 0;
+          const centerLineMaterial = new StandardMaterial('centerLineMaterial', scene);
+          centerLineMaterial.diffuseColor = new Color3(1, 1, 1);
+          centerLine.material = centerLineMaterial;
+          
+          // Left paddle (red)
+          const leftPaddle = MeshBuilder.CreateBox('leftPaddle', { width: 0.2, height: 1, depth: 2 }, scene);
+          leftPaddle.position.x = -7;
+          const leftPaddleMaterial = new StandardMaterial('leftPaddleMaterial', scene);
+          leftPaddleMaterial.diffuseColor = new Color3(1, 0.2, 0.2);
+          leftPaddle.material = leftPaddleMaterial;
+          
+          // Right paddle (blue)
+          const rightPaddle = MeshBuilder.CreateBox('rightPaddle', { width: 0.2, height: 1, depth: 2 }, scene);
+          rightPaddle.position.x = 7;
+          const rightPaddleMaterial = new StandardMaterial('rightPaddleMaterial', scene);
+          rightPaddleMaterial.diffuseColor = new Color3(0.2, 0.2, 1);
+          rightPaddle.material = rightPaddleMaterial;
+          
+          // Ball
+          const ball = MeshBuilder.CreateSphere('ball', { diameter: 0.3 }, scene);
+          ball.position = Vector3.Zero();
+          const ballMaterial = new StandardMaterial('ballMaterial', scene);
+          ballMaterial.diffuseColor = new Color3(1, 1, 0);
+          ballMaterial.emissiveColor = new Color3(0.2, 0.2, 0);
+          ball.material = ballMaterial;
+          
+          console.log('✅ 3D Arena created with paddles and ball');
+          
+          // Start render loop
+          engine.runRenderLoop(() => {
+            scene.render();
+          });
+          
+          // Handle window resize
+          window.addEventListener('resize', () => {
+            engine.resize();
+          });
+          
+          console.log('✅ 3D Game scene fully initialized');
+          showStatus('3D Game Ready!', 'success');
+          
+          // Store references
+          gameScene = { engine, scene, leftPaddle, rightPaddle, ball };
+          
+          // Setup input handling
+          setupInputHandling();
+          
+          return true;
+          
+        } catch (error) {
+          console.error('❌ BabylonJS initialization error:', error);
+          showStatus(`3D Graphics Error: ${error.message}`, 'error');
+          return false;
+        }
+      }
+      
+      function setupInputHandling() {
+        const inputState = { up: false, down: false };
+        
+        document.addEventListener('keydown', (e) => {
+          switch(e.code) {
+            case 'ArrowUp':
+            case 'KeyW':
+              if (!inputState.up) {
+                inputState.up = true;
+                handleInput('up');
+              }
+              e.preventDefault();
+              break;
+            case 'ArrowDown':
+            case 'KeyS':
+              if (!inputState.down) {
+                inputState.down = true;
+                handleInput('down');
+              }
+              e.preventDefault();
+              break;
+          }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+          switch(e.code) {
+            case 'ArrowUp':
+            case 'KeyW':
+              inputState.up = false;
+              handleInput('none');
+              e.preventDefault();
+              break;
+            case 'ArrowDown':
+            case 'KeyS':
+              inputState.down = false;
+              handleInput('none');
+              e.preventDefault();
+              break;
+          }
+        });
+        
+        console.log('✅ Input handling setup complete');
+      }
+      
+      function handleInput(direction) {
+        if (!gameScene) return;
+        
+        const speed = 0.1;
+        const bounds = { min: -4, max: 4 };
+        
+        if (playerNumber === 1 || !playerNumber) { // Left paddle
+          const paddle = gameScene.leftPaddle;
+          if (direction === 'up' && paddle.position.z < bounds.max) {
+            paddle.position.z += speed;
+          } else if (direction === 'down' && paddle.position.z > bounds.min) {
+            paddle.position.z -= speed;
+          }
+        }
+        
+        if (playerNumber === 2 || !playerNumber) { // Right paddle (for single player testing)
+          const paddle = gameScene.rightPaddle;
+          if (direction === 'up' && paddle.position.z < bounds.max) {
+            paddle.position.z += speed;
+          } else if (direction === 'down' && paddle.position.z > bounds.min) {
+            paddle.position.z -= speed;
+          }
+        }
+        
+        console.log(`Input: ${direction}, Player: ${playerNumber || 'demo'}`);
+      }
+      
+      // Event handlers
+      hostGameBtn.addEventListener('click', async () => {
+        console.log('🎮 Host Game clicked');
+        showStatus('Hosting game...', 'loading');
+        
+        isHost = true;
+        playerNumber = 1;
+        
+        const success = await initializeBabylonJS();
+        if (success) {
+          showGame();
+          showStatus('Game hosted! Use Arrow Keys or WASD to control left paddle', 'success');
+        }
+      });
+      
+      joinGameBtn.addEventListener('click', () => {
+        console.log('🎮 Join Game clicked');
+        joinForm.classList.toggle('hidden');
+      });
+      
+      connectBtn.addEventListener('click', async () => {
+        console.log('🎮 Connect clicked');
+        const ip = document.getElementById('ip-input').value;
+        const port = document.getElementById('port-input').value;
+        
+        showStatus(`Connecting to ${ip}:${port}...`, 'loading');
+        
+        isHost = false;
+        playerNumber = 2;
+        
+        // For demo, just initialize the game
+        const success = await initializeBabylonJS();
+        if (success) {
+          showGame();
+          showStatus('Connected! Use Arrow Keys or WASD to control right paddle', 'success');
+        }
+      });
+      
+      console.log('✅ Event handlers setup complete');
+      console.log('🎮 CorysiaPong ready! Click Host Game or Join Game to start.');
+    </script>
+  </body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CorysiaPong Simple Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #242424;
+            color: white;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #646cff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #535bf2;
+        }
+        #output {
+            margin: 20px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 CorysiaPong Simple Test</h1>
+    
+    <button id="host-game">Host Game</button>
+    <button id="join-game">Join Game</button>
+    <button id="test-babylonjs">Test BabylonJS</button>
+    
+    <div id="output">
+        <p>Click buttons to test functionality...</p>
+    </div>
+    
+    <canvas id="renderCanvas" width="800" height="400" style="border: 1px solid white; margin: 20px 0;"></canvas>
+    
+    <script type="module">
+        console.log('Simple test script loaded');
+        
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            console.log(message);
+            output.innerHTML += '<p>' + message + '</p>';
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            log('DOM loaded');
+            
+            // Test basic button functionality
+            document.getElementById('host-game').addEventListener('click', () => {
+                log('✅ Host Game button clicked!');
+            });
+            
+            document.getElementById('join-game').addEventListener('click', () => {
+                log('✅ Join Game button clicked!');
+            });
+            
+            // Test BabylonJS import
+            document.getElementById('test-babylonjs').addEventListener('click', async () => {
+                try {
+                    log('Testing BabylonJS import...');
+                    const { Engine, Scene, Vector3 } = await import('@babylonjs/core');
+                    log('✅ BabylonJS imported successfully!');
+                    log('✅ Engine: ' + typeof Engine);
+                    log('✅ Scene: ' + typeof Scene);
+                    log('✅ Vector3: ' + typeof Vector3);
+                    
+                    // Try creating an engine
+                    const canvas = document.getElementById('renderCanvas');
+                    const engine = new Engine(canvas, true);
+                    log('✅ BabylonJS Engine created successfully!');
+                    
+                    const scene = new Scene(engine);
+                    log('✅ BabylonJS Scene created successfully!');
+                    
+                } catch (error) {
+                    log('❌ BabylonJS error: ' + error.message);
+                    console.error('BabylonJS error:', error);
+                }
+            });
+            
+            log('✅ Event listeners added');
+        });
+    </script>
+</body>
+</html>

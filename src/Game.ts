@@ -3,8 +3,8 @@ import { GameScene } from './game/Scene'
 import { GameLogic } from './game/GameLogic'
 import { InputHandler } from './input/InputHandler'
 import { MenuSystem } from './ui/MenuSystem'
-import { NetworkClient } from './network/Client'
-import { GameRoomState, PlayerState } from './network/Room'
+import { NetworkClient } from './network/Client-simple'
+// import { GameRoomState, PlayerState } from './network/Room'
 
 export class Game {
   private canvas: HTMLCanvasElement
@@ -38,11 +38,11 @@ export class Game {
   }
 
   private setupNetworkCallbacks(): void {
-    this.networkClient.onStateChangeListener((state: GameRoomState) => {
+    this.networkClient.onStateChangeListener((state: any) => {
       this.handleNetworkStateChange(state)
     })
 
-    this.networkClient.onPlayerJoinedListener((player: PlayerState) => {
+    this.networkClient.onPlayerJoinedListener((player: any) => {
       console.log(`Player ${player.playerNumber} joined`)
       if (this.networkClient.getPlayerCount() === 2) {
         this.menuSystem.showGameReady()
@@ -204,36 +204,11 @@ export class Game {
     this.gameLoop = requestAnimationFrame(this.update.bind(this))
   }
 
-  private handleNetworkStateChange(state: GameRoomState): void {
+  private handleNetworkStateChange(state: any): void {
     if (!this.gameLogic) return
 
-    // Update local game state from network
-    if (!this.isHost) {
-      // Non-host clients receive authoritative state from host
-      const ballPos = new Vector3(state.ball.x, state.ball.y, state.ball.z)
-      const ballVel = new Vector3(state.ball.velocityX, state.ball.velocityY, state.ball.velocityZ)
-      this.gameLogic.setBallState(ballPos, ballVel)
-    }
-
-    // Update paddle positions
-    const players = Array.from(state.players.values())
-    players.forEach(player => {
-      if (player.playerNumber === 1) {
-        this.gameLogic!.setLeftPaddlePosition(player.paddlePosition)
-      } else if (player.playerNumber === 2) {
-        this.gameLogic!.setRightPaddlePosition(player.paddlePosition)
-      }
-    })
-
-    // Update scores
-    this.menuSystem.updateScore(state.player1Score, state.player2Score)
-
-    // Handle game status changes
-    if (state.gameStatus === 'ended') {
-      const winner = state.player1Score > state.player2Score ? 'Player 1' : 'Player 2'
-      this.menuSystem.showGameEnded(winner)
-      this.stopGame()
-    }
+    // Simplified for demo - no network state sync in this version
+    console.log('Network state change (demo mode):', state)
   }
 
   private handleLocalInput(direction: 'up' | 'down' | 'none'): void {

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+</head>
+<body>
+    <h1>Debug Test</h1>
+    <button id="test-button">Test Button</button>
+    <div id="output"></div>
+    
+    <script>
+        console.log('Debug script loaded');
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded in debug test');
+            
+            const button = document.getElementById('test-button');
+            const output = document.getElementById('output');
+            
+            if (button) {
+                console.log('Button found');
+                button.addEventListener('click', () => {
+                    console.log('Button clicked!');
+                    output.innerHTML = '<p>Button works!</p>';
+                });
+            } else {
+                console.log('Button NOT found');
+            }
+            
+            // Test fetch to main game
+            fetch('/src/main.ts')
+                .then(response => response.text())
+                .then(text => {
+                    console.log('main.ts first 200 chars:', text.substring(0, 200));
+                })
+                .catch(error => {
+                    console.error('Error fetching main.ts:', error);
+                });
+        });
+    </script>
+</body>
+</html>
