@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CorysiaPong Simple Debug</title>
+    <style>
+      :root {
+        font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        line-height: 1.5;
+        font-weight: 400;
+        color-scheme: dark light;
+        color: rgba(255, 255, 255, 0.87);
+        background-color: #242424;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        place-items: center;
+        min-width: 320px;
+        min-height: 100vh;
+      }
+
+      #app {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .menu {
+        text-align: center;
+        padding: 2rem;
+        background: #1a1a1a;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      }
+
+      .menu h1 {
+        color: #646cff;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+      }
+
+      .menu-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .menu-buttons button {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 4px;
+        background: #646cff;
+        color: white;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .menu-buttons button:hover {
+        background: #535bf2;
+      }
+
+      .join-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        background: #2a2a2a;
+        border-radius: 4px;
+      }
+
+      .join-form input {
+        padding: 0.75rem;
+        border: 1px solid #444;
+        border-radius: 4px;
+        background: #1a1a1a;
+        color: white;
+        font-size: 1rem;
+      }
+
+      .join-form input:focus {
+        outline: none;
+        border-color: #646cff;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .game-container {
+        width: 100%;
+        height: 100vh;
+        position: relative;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .game-ui {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 1rem;
+        border-radius: 8px;
+        color: white;
+        font-size: 1.2rem;
+        z-index: 100;
+      }
+
+      #score {
+        font-weight: bold;
+        font-size: 1.5rem;
+      }
+
+      #connection-status {
+        color: #4ade80;
+        font-size: 1rem;
+      }
+
+      #debug-output {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        height: 150px;
+        background: rgba(0, 0, 0, 0.9);
+        color: #00ff00;
+        font-family: monospace;
+        font-size: 12px;
+        padding: 10px;
+        overflow-y: auto;
+        z-index: 1000;
+        border: 1px solid #333;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="menu" class="menu">
+        <h1>CorysiaPong Simple Debug</h1>
+        <div class="menu-buttons">
+          <button id="host-game">Host Game</button>
+          <button id="join-game">Join Game</button>
+          <button id="test-direct">Test Direct Game Creation</button>
+        </div>
+        <div id="join-form" class="join-form hidden">
+          <input type="text" id="ip-input" placeholder="IP Address" value="localhost" />
+          <input type="text" id="port-input" placeholder="Port" value="2567" />
+          <button id="connect-btn">Connect</button>
+        </div>
+      </div>
+      <div id="game-container" class="game-container hidden">
+        <canvas id="renderCanvas"></canvas>
+        <div id="game-ui" class="game-ui">
+          <div id="score">Player 1: 0 | Player 2: 0</div>
+          <div id="connection-status">Connected</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="debug-output"></div>
+
+    <script type="module">
+      const debugOutput = document.getElementById('debug-output');
+      
+      function debug(message) {
+        const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+        const logLine = `[${timestamp}] ${message}`;
+        console.log(logLine);
+        debugOutput.innerHTML += logLine + '\n';
+        debugOutput.scrollTop = debugOutput.scrollHeight;
+      }
+      
+      debug('🔧 Simple debug version loaded');
+      
+      // Test button functionality first
+      document.getElementById('host-game').addEventListener('click', () => {
+        debug('✅ Host Game button clicked - event listener working');
+        testGameImport('host');
+      });
+      
+      document.getElementById('join-game').addEventListener('click', () => {
+        debug('✅ Join Game button clicked - event listener working');
+        const joinForm = document.getElementById('join-form');
+        joinForm.classList.toggle('hidden');
+        debug('📋 Join form toggled');
+      });
+      
+      document.getElementById('connect-btn').addEventListener('click', () => {
+        debug('✅ Connect button clicked');
+        const ip = document.getElementById('ip-input').value;
+        const port = document.getElementById('port-input').value;
+        debug(`🌐 Attempting to connect to ${ip}:${port}`);
+        testGameImport('join');
+      });
+      
+      document.getElementById('test-direct').addEventListener('click', () => {
+        debug('🧪 Testing direct game creation');
+        testDirectGameCreation();
+      });
+      
+      async function testGameImport(mode) {
+        try {
+          debug(`📦 Importing Game class for ${mode} mode...`);
+          const { Game } = await import('/src/Game.ts');
+          debug('✅ Game class imported successfully');
+          
+          debug('🎮 Creating Game instance...');
+          const game = new Game();
+          debug('✅ Game instance created successfully');
+          
+          debug('🎯 Game creation completed - this means the issue is elsewhere');
+          
+        } catch (error) {
+          debug(`❌ Error importing/creating Game: ${error.message}`);
+          debug(`📍 Stack: ${error.stack}`);
+        }
+      }
+      
+      async function testDirectGameCreation() {
+        try {
+          debug('🧪 Testing direct BabylonJS creation...');
+          
+          const canvas = document.getElementById('renderCanvas');
+          if (!canvas) {
+            debug('❌ Canvas not found!');
+            return;
+          }
+          debug('✅ Canvas found');
+          
+          const { Engine, Scene, FreeCamera, Vector3 } = await import('@babylonjs/core');
+          debug('✅ BabylonJS imported');
+          
+          const engine = new Engine(canvas, true);
+          debug('✅ Engine created');
+          
+          const scene = new Scene(engine);
+          debug('✅ Scene created');
+          
+          const camera = new FreeCamera('camera', new Vector3(0, 5, -15), scene);
+          scene.activeCamera = camera;
+          debug('✅ Camera created');
+          
+          engine.runRenderLoop(() => {
+            scene.render();
+          });
+          debug('✅ Render loop started');
+          
+          // Show the game container
+          document.getElementById('menu').classList.add('hidden');
+          document.getElementById('game-container').classList.remove('hidden');
+          debug('✅ Switched to game view');
+          
+        } catch (error) {
+          debug(`❌ Direct creation error: ${error.message}`);
+        }
+      }
+      
+      debug('📋 Event listeners attached, buttons should work now');
+    </script>
+  </body>
+</html>

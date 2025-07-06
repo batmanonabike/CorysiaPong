@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CorysiaPong Standalone</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #242424;
+            color: white;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 1rem;
+            border-radius: 8px;
+            color: white;
+            font-size: 1.2rem;
+            z-index: 100;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            z-index: 100;
+        }
+        
+        .status {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            z-index: 200;
+            font-size: 1.5rem;
+        }
+        
+        .loading {
+            color: #646cff;
+        }
+        
+        .error {
+            color: #ff4444;
+        }
+        
+        .success {
+            color: #44ff44;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="renderCanvas"></canvas>
+        
+        <div class="game-ui">
+            <div id="score">Player 1: 0 | Player 2: 0</div>
+            <div id="connection-status">Initializing...</div>
+        </div>
+        
+        <div class="controls">
+            <div>🎮 Controls: Arrow Keys or WASD to move paddles</div>
+            <div>Left Paddle: Player 1 | Right Paddle: Player 2</div>
+        </div>
+        
+        <div id="status" class="status loading">
+            Loading 3D Pong Game...
+        </div>
+    </div>
+
+    <script type="module">
+        console.log('🎮 CorysiaPong Standalone initializing...');
+        
+        const statusDiv = document.getElementById('status');
+        const scoreDiv = document.getElementById('score');
+        const connectionDiv = document.getElementById('connection-status');
+        
+        function showStatus(message, type = 'loading') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            console.log(`Status (${type}): ${message}`);
+        }
+        
+        function hideStatus() {
+            statusDiv.style.display = 'none';
+        }
+        
+        async function initializeStandaloneGame() {
+            try {
+                showStatus('Loading BabylonJS 3D Engine...', 'loading');
+                
+                // Import BabylonJS
+                const { Engine, Scene, FreeCamera, HemisphericLight, Vector3, Color3, MeshBuilder, StandardMaterial } = await import('@babylonjs/core');
+                console.log('✅ BabylonJS imported successfully');
+                
+                showStatus('Creating 3D Scene...', 'loading');
+                
+                // Get canvas
+                const canvas = document.getElementById('renderCanvas');
+                console.log('✅ Canvas found:', canvas);
+                
+                // Create engine
+                const engine = new Engine(canvas, true);
+                console.log('✅ BabylonJS Engine created');
+                
+                // Create scene
+                const scene = new Scene(engine);
+                scene.clearColor = new Color3(0.1, 0.1, 0.2);
+                console.log('✅ BabylonJS Scene created');
+                
+                // Create camera
+                const camera = new FreeCamera('camera', new Vector3(0, 5, -15), scene);
+                camera.setTarget(Vector3.Zero());
+                scene.activeCamera = camera;
+                console.log('✅ Camera created');
+                
+                // Create lighting
+                const light = new HemisphericLight('light', new Vector3(0, 1, 0), scene);
+                light.intensity = 0.8;
+                console.log('✅ Lighting created');
+                
+                showStatus('Building Pong Arena...', 'loading');
+                
+                // Create arena
+                const arenaWidth = 16;
+                const arenaHeight = 10;
+                
+                // Floor
+                const floor = MeshBuilder.CreateBox('floor', { width: arenaWidth, height: 0.1, depth: arenaHeight }, scene);
+                floor.position.y = -0.5;
+                const floorMaterial = new StandardMaterial('floorMaterial', scene);
+                floorMaterial.diffuseColor = new Color3(0.2, 0.2, 0.3);
+                floor.material = floorMaterial;
+                
+                // Walls
+                const topWall = MeshBuilder.CreateBox('topWall', { width: arenaWidth, height: 1, depth: 0.5 }, scene);
+                topWall.position.z = arenaHeight / 2;
+                const bottomWall = MeshBuilder.CreateBox('bottomWall', { width: arenaWidth, height: 1, depth: 0.5 }, scene);
+                bottomWall.position.z = -arenaHeight / 2;
+                const wallMaterial = new StandardMaterial('wallMaterial', scene);
+                wallMaterial.diffuseColor = new Color3(0.8, 0.8, 0.8);
+                topWall.material = wallMaterial;
+                bottomWall.material = wallMaterial;
+                
+                // Center line
+                const centerLine = MeshBuilder.CreateBox('centerLine', { width: 0.1, height: 0.2, depth: arenaHeight }, scene);
+                centerLine.position.x = 0;
+                const centerLineMaterial = new StandardMaterial('centerLineMaterial', scene);
+                centerLineMaterial.diffuseColor = new Color3(1, 1, 1);
+                centerLine.material = centerLineMaterial;
+                
+                // Left paddle (red)
+                const leftPaddle = MeshBuilder.CreateBox('leftPaddle', { width: 0.2, height: 1, depth: 2 }, scene);
+                leftPaddle.position.x = -7;
+                const leftPaddleMaterial = new StandardMaterial('leftPaddleMaterial', scene);
+                leftPaddleMaterial.diffuseColor = new Color3(1, 0.2, 0.2);
+                leftPaddle.material = leftPaddleMaterial;
+                
+                // Right paddle (blue)
+                const rightPaddle = MeshBuilder.CreateBox('rightPaddle', { width: 0.2, height: 1, depth: 2 }, scene);
+                rightPaddle.position.x = 7;
+                const rightPaddleMaterial = new StandardMaterial('rightPaddleMaterial', scene);
+                rightPaddleMaterial.diffuseColor = new Color3(0.2, 0.2, 1);
+                rightPaddle.material = rightPaddleMaterial;
+                
+                // Ball
+                const ball = MeshBuilder.CreateSphere('ball', { diameter: 0.3 }, scene);
+                ball.position = Vector3.Zero();
+                const ballMaterial = new StandardMaterial('ballMaterial', scene);
+                ballMaterial.diffuseColor = new Color3(1, 1, 0);
+                ballMaterial.emissiveColor = new Color3(0.2, 0.2, 0);
+                ball.material = ballMaterial;
+                
+                console.log('✅ 3D Pong Arena created successfully');
+                
+                showStatus('Starting Game...', 'loading');
+                
+                // Ball physics
+                let ballVelocity = new Vector3(0.1, 0, 0.05);
+                let player1Score = 0;
+                let player2Score = 0;
+                
+                // Input handling
+                const inputState = { up: false, down: false };
+                const paddleSpeed = 0.15;
+                const bounds = { min: -4, max: 4 };
+                
+                document.addEventListener('keydown', (e) => {
+                    switch(e.code) {
+                        case 'ArrowUp':
+                        case 'KeyW':
+                            inputState.up = true;
+                            e.preventDefault();
+                            break;
+                        case 'ArrowDown':
+                        case 'KeyS':
+                            inputState.down = true;
+                            e.preventDefault();
+                            break;
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    switch(e.code) {
+                        case 'ArrowUp':
+                        case 'KeyW':
+                            inputState.up = false;
+                            e.preventDefault();
+                            break;
+                        case 'ArrowDown':
+                        case 'KeyS':
+                            inputState.down = false;
+                            e.preventDefault();
+                            break;
+                    }
+                });
+                
+                // Game loop
+                let lastTime = performance.now();
+                function gameLoop() {
+                    const currentTime = performance.now();
+                    const deltaTime = (currentTime - lastTime) / 1000;
+                    lastTime = currentTime;
+                    
+                    // Update paddle positions
+                    if (inputState.up) {
+                        if (leftPaddle.position.z < bounds.max) {
+                            leftPaddle.position.z += paddleSpeed;
+                        }
+                        if (rightPaddle.position.z < bounds.max) {
+                            rightPaddle.position.z += paddleSpeed;
+                        }
+                    }
+                    if (inputState.down) {
+                        if (leftPaddle.position.z > bounds.min) {
+                            leftPaddle.position.z -= paddleSpeed;
+                        }
+                        if (rightPaddle.position.z > bounds.min) {
+                            rightPaddle.position.z -= paddleSpeed;
+                        }
+                    }
+                    
+                    // Update ball position
+                    ball.position.addInPlace(ballVelocity);
+                    
+                    // Ball collision with walls
+                    if (ball.position.z >= 4.5 || ball.position.z <= -4.5) {
+                        ballVelocity.z = -ballVelocity.z;
+                    }
+                    
+                    // Ball collision with paddles
+                    if (ball.position.x <= -6.5 && ball.position.x >= -7.5 && 
+                        ball.position.z >= leftPaddle.position.z - 1 && 
+                        ball.position.z <= leftPaddle.position.z + 1 &&
+                        ballVelocity.x < 0) {
+                        ballVelocity.x = -ballVelocity.x;
+                        ballVelocity.z += (ball.position.z - leftPaddle.position.z) * 0.1;
+                    }
+                    
+                    if (ball.position.x >= 6.5 && ball.position.x <= 7.5 && 
+                        ball.position.z >= rightPaddle.position.z - 1 && 
+                        ball.position.z <= rightPaddle.position.z + 1 &&
+                        ballVelocity.x > 0) {
+                        ballVelocity.x = -ballVelocity.x;
+                        ballVelocity.z += (ball.position.z - rightPaddle.position.z) * 0.1;
+                    }
+                    
+                    // Scoring
+                    if (ball.position.x < -8) {
+                        player2Score++;
+                        ball.position = Vector3.Zero();
+                        ballVelocity = new Vector3(0.1, 0, 0);
+                        updateScore();
+                    } else if (ball.position.x > 8) {
+                        player1Score++;
+                        ball.position = Vector3.Zero();
+                        ballVelocity = new Vector3(-0.1, 0, 0);
+                        updateScore();
+                    }
+                    
+                    // Limit ball velocity
+                    const maxSpeed = 0.3;
+                    if (ballVelocity.length() > maxSpeed) {
+                        ballVelocity.normalize().scaleInPlace(maxSpeed);
+                    }
+                    
+                    requestAnimationFrame(gameLoop);
+                }
+                
+                function updateScore() {
+                    scoreDiv.textContent = `Player 1: ${player1Score} | Player 2: ${player2Score}`;
+                    if (player1Score >= 5) {
+                        connectionDiv.textContent = '🏆 Player 1 Wins!';
+                    } else if (player2Score >= 5) {
+                        connectionDiv.textContent = '🏆 Player 2 Wins!';
+                    }
+                }
+                
+                // Start render loop
+                engine.runRenderLoop(() => {
+                    scene.render();
+                });
+                
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    engine.resize();
+                });
+                
+                // Start game
+                setTimeout(() => {
+                    hideStatus();
+                    connectionDiv.textContent = '🎮 Game Active - Use Arrow Keys or WASD!';
+                    gameLoop();
+                    console.log('🎉 Game started successfully!');
+                }, 1000);
+                
+            } catch (error) {
+                console.error('❌ Game initialization error:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeStandaloneGame();
+        });
+    </script>
+</body>
+</html>
