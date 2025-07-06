@@ -105,7 +105,7 @@ export class Game {
       if (result.success) {
         this.isHost = true
         this.playerNumber = 1
-        this.menuSystem.showWaitingForPlayers()
+        this.menuSystem.showSuccess('Game hosted! Starting 3D scene...')
         this.initializeGame()
       } else {
         this.menuSystem.showError(result.error || 'Failed to create room')
@@ -121,7 +121,7 @@ export class Game {
       if (result.success) {
         this.isHost = false
         this.playerNumber = 2
-        this.menuSystem.showSuccess('Connected to game!')
+        this.menuSystem.showSuccess('Connected! Loading 3D scene...')
         this.initializeGame()
       } else {
         this.menuSystem.showError(result.error || 'Failed to join room')
@@ -162,6 +162,11 @@ export class Game {
       this.gameLogic = new GameLogic(this.gameScene.getScene())
     }
     this.menuSystem.showGame()
+    
+    // In demo mode, automatically start the game
+    setTimeout(() => {
+      this.startGame()
+    }, 1000) // Give scene time to initialize
   }
 
   private startGame(): void {
