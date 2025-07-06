@@ -21,35 +21,45 @@ export class MenuSystem {
   }
 
   private initializeElements(): void {
-    this.elements.menu = document.getElementById('menu')!
-    this.elements.gameContainer = document.getElementById('game-container')!
-    this.elements.hostGameBtn = document.getElementById('host-game')!
-    this.elements.joinGameBtn = document.getElementById('join-game')!
-    this.elements.joinForm = document.getElementById('join-form')!
-    this.elements.ipInput = document.getElementById('ip-input')! as HTMLInputElement
-    this.elements.portInput = document.getElementById('port-input')! as HTMLInputElement
-    this.elements.connectBtn = document.getElementById('connect-btn')!
-    this.elements.score = document.getElementById('score')!
-    this.elements.connectionStatus = document.getElementById('connection-status')!
+    this.elements.menu = document.getElementById('menu') || document.createElement('div')
+    this.elements.gameContainer = document.getElementById('game-container') || document.createElement('div')
+    this.elements.hostGameBtn = document.getElementById('host-game') || document.createElement('button')
+    this.elements.joinGameBtn = document.getElementById('join-game') || document.createElement('button')
+    this.elements.joinForm = document.getElementById('join-form') || document.createElement('div')
+    this.elements.ipInput = (document.getElementById('ip-input') || document.createElement('input')) as HTMLInputElement
+    this.elements.portInput = (document.getElementById('port-input') || document.createElement('input')) as HTMLInputElement
+    this.elements.connectBtn = document.getElementById('connect-btn') || document.createElement('button')
+    this.elements.score = document.getElementById('score') || document.createElement('div')
+    this.elements.connectionStatus = document.getElementById('connection-status') || document.createElement('div')
   }
 
   private setupEventListeners(): void {
-    this.elements.hostGameBtn.addEventListener('click', this.handleHostGame.bind(this))
-    this.elements.joinGameBtn.addEventListener('click', this.handleJoinGameClick.bind(this))
-    this.elements.connectBtn.addEventListener('click', this.handleConnect.bind(this))
+    if (this.elements.hostGameBtn) {
+      this.elements.hostGameBtn.addEventListener('click', this.handleHostGame.bind(this))
+    }
+    if (this.elements.joinGameBtn) {
+      this.elements.joinGameBtn.addEventListener('click', this.handleJoinGameClick.bind(this))
+    }
+    if (this.elements.connectBtn) {
+      this.elements.connectBtn.addEventListener('click', this.handleConnect.bind(this))
+    }
     
     // Handle Enter key in input fields
-    this.elements.ipInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        this.handleConnect()
-      }
-    })
+    if (this.elements.ipInput) {
+      this.elements.ipInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.handleConnect()
+        }
+      })
+    }
     
-    this.elements.portInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        this.handleConnect()
-      }
-    })
+    if (this.elements.portInput) {
+      this.elements.portInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.handleConnect()
+        }
+      })
+    }
   }
 
   private handleHostGame(): void {
