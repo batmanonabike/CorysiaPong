@@ -1,9 +1,9 @@
-import { Engine, Scene, ArcRotateCamera, HemisphericLight, Vector3, Color3, MeshBuilder, StandardMaterial, Mesh } from '@babylonjs/core'
+import { Engine, Scene, FreeCamera, HemisphericLight, Vector3, Color3, MeshBuilder, StandardMaterial, Mesh } from '@babylonjs/core'
 
 export class GameScene {
   private engine: Engine
   private scene: Scene
-  private camera: ArcRotateCamera
+  private camera: FreeCamera
   private canvas: HTMLCanvasElement
 
   constructor(canvas: HTMLCanvasElement) {
@@ -21,16 +21,9 @@ export class GameScene {
   }
 
   private setupCamera(): void {
-    this.camera = new ArcRotateCamera(
-      'camera',
-      -Math.PI / 2,
-      Math.PI / 2.5,
-      20,
-      Vector3.Zero(),
-      this.scene
-    )
+    this.camera = new FreeCamera('camera', new Vector3(0, 5, -15), this.scene)
     this.camera.setTarget(Vector3.Zero())
-    this.camera.attachControls(this.canvas, true)
+    this.scene.activeCamera = this.camera
   }
 
   private setupLighting(): void {
