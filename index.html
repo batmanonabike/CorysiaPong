@@ -5,6 +5,180 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CorysiaPong</title>
+    <style>
+      :root {
+        font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        line-height: 1.5;
+        font-weight: 400;
+        color-scheme: dark light;
+        color: rgba(255, 255, 255, 0.87);
+        background-color: #242424;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        place-items: center;
+        min-width: 320px;
+        min-height: 100vh;
+      }
+
+      #app {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .menu {
+        text-align: center;
+        padding: 2rem;
+        background: #1a1a1a;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      }
+
+      .menu h1 {
+        color: #646cff;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+      }
+
+      .menu-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .menu-buttons button {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 4px;
+        background: #646cff;
+        color: white;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .menu-buttons button:hover {
+        background: #535bf2;
+      }
+
+      .join-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        background: #2a2a2a;
+        border-radius: 4px;
+      }
+
+      .join-form input {
+        padding: 0.75rem;
+        border: 1px solid #444;
+        border-radius: 4px;
+        background: #1a1a1a;
+        color: white;
+        font-size: 1rem;
+      }
+
+      .join-form input:focus {
+        outline: none;
+        border-color: #646cff;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .game-container {
+        width: 100%;
+        height: 100vh;
+        position: relative;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .game-ui {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 1rem;
+        border-radius: 8px;
+        color: white;
+        font-size: 1.2rem;
+        z-index: 100;
+      }
+
+      #score {
+        font-weight: bold;
+        font-size: 1.5rem;
+      }
+
+      #connection-status {
+        color: #4ade80;
+        font-size: 1rem;
+      }
+
+      .status-message {
+        margin: 1rem 0;
+        padding: 0.75rem;
+        border-radius: 4px;
+        font-weight: bold;
+      }
+
+      .status-loading {
+        background: #646cff;
+        color: white;
+      }
+
+      .status-error {
+        background: #ff4444;
+        color: white;
+      }
+
+      .status-success {
+        background: #44ff44;
+        color: black;
+      }
+
+      .controls-help {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        color: white;
+        z-index: 100;
+      }
+    </style>
   </head>
   <body>
     <div id="app">
@@ -19,15 +193,312 @@
           <input type="text" id="port-input" placeholder="Port" value="2567" />
           <button id="connect-btn">Connect</button>
         </div>
+        <div id="status-area"></div>
       </div>
       <div id="game-container" class="game-container hidden">
         <canvas id="renderCanvas"></canvas>
         <div id="game-ui" class="game-ui">
           <div id="score">Player 1: 0 | Player 2: 0</div>
-          <div id="connection-status">Connected</div>
+          <div id="connection-status">Game Active</div>
+        </div>
+        <div class="controls-help">
+          <div>🎮 Controls: Arrow Keys or WASD</div>
+          <div>Left Paddle: Player 1 | Right Paddle: Player 2</div>
+          <div>Press ESC to return to menu</div>
         </div>
       </div>
     </div>
-    <script type="module" src="/src/main.ts"></script>
+
+    <script type="module">
+      console.log('🎮 CorysiaPong Direct Implementation');
+      
+      // Game state
+      let gameActive = false;
+      let gameScene = null;
+      let player1Score = 0;
+      let player2Score = 0;
+      
+      // UI Elements
+      const menu = document.getElementById('menu');
+      const gameContainer = document.getElementById('game-container');
+      const hostBtn = document.getElementById('host-game');
+      const joinBtn = document.getElementById('join-game');
+      const joinForm = document.getElementById('join-form');
+      const connectBtn = document.getElementById('connect-btn');
+      const statusArea = document.getElementById('status-area');
+      const scoreElement = document.getElementById('score');
+      const statusElement = document.getElementById('connection-status');
+      
+      function showStatus(message, type = 'loading') {
+        statusArea.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+        console.log(`Status: ${message}`);
+      }
+      
+      function showGame() {
+        console.log('🎮 Switching to game view...');
+        menu.classList.add('hidden');
+        gameContainer.classList.remove('hidden');
+      }
+      
+      function showMenu() {
+        console.log('📋 Switching to menu view...');
+        menu.classList.remove('hidden');
+        gameContainer.classList.add('hidden');
+        gameActive = false;
+      }
+      
+      function updateScore() {
+        scoreElement.textContent = `Player 1: ${player1Score} | Player 2: ${player2Score}`;
+        if (player1Score >= 5) {
+          statusElement.textContent = '🏆 Player 1 Wins!';
+        } else if (player2Score >= 5) {
+          statusElement.textContent = '🏆 Player 2 Wins!';
+        }
+      }
+      
+      async function createGame() {
+        try {
+          showStatus('Loading 3D Engine...', 'loading');
+          
+          // Import BabylonJS
+          const { Engine, Scene, FreeCamera, HemisphericLight, Vector3, Color3, MeshBuilder, StandardMaterial } = await import('@babylonjs/core');
+          console.log('✅ BabylonJS imported');
+          
+          showStatus('Creating 3D Scene...', 'loading');
+          
+          // Get canvas
+          const canvas = document.getElementById('renderCanvas');
+          
+          // Create engine and scene
+          const engine = new Engine(canvas, true);
+          const scene = new Scene(engine);
+          scene.clearColor = new Color3(0.1, 0.1, 0.2);
+          
+          // Create camera
+          const camera = new FreeCamera('camera', new Vector3(0, 5, -15), scene);
+          camera.setTarget(Vector3.Zero());
+          scene.activeCamera = camera;
+          
+          // Create lighting
+          const light = new HemisphericLight('light', new Vector3(0, 1, 0), scene);
+          light.intensity = 0.8;
+          
+          showStatus('Building Game Arena...', 'loading');
+          
+          // Create arena
+          const arenaWidth = 16;
+          const arenaHeight = 10;
+          
+          // Floor
+          const floor = MeshBuilder.CreateBox('floor', { width: arenaWidth, height: 0.1, depth: arenaHeight }, scene);
+          floor.position.y = -0.5;
+          const floorMaterial = new StandardMaterial('floorMaterial', scene);
+          floorMaterial.diffuseColor = new Color3(0.2, 0.2, 0.3);
+          floor.material = floorMaterial;
+          
+          // Walls
+          const topWall = MeshBuilder.CreateBox('topWall', { width: arenaWidth, height: 1, depth: 0.5 }, scene);
+          topWall.position.z = arenaHeight / 2;
+          const bottomWall = MeshBuilder.CreateBox('bottomWall', { width: arenaWidth, height: 1, depth: 0.5 }, scene);
+          bottomWall.position.z = -arenaHeight / 2;
+          const wallMaterial = new StandardMaterial('wallMaterial', scene);
+          wallMaterial.diffuseColor = new Color3(0.8, 0.8, 0.8);
+          topWall.material = wallMaterial;
+          bottomWall.material = wallMaterial;
+          
+          // Center line
+          const centerLine = MeshBuilder.CreateBox('centerLine', { width: 0.1, height: 0.2, depth: arenaHeight }, scene);
+          centerLine.position.x = 0;
+          const centerLineMaterial = new StandardMaterial('centerLineMaterial', scene);
+          centerLineMaterial.diffuseColor = new Color3(1, 1, 1);
+          centerLine.material = centerLineMaterial;
+          
+          // Left paddle (red)
+          const leftPaddle = MeshBuilder.CreateBox('leftPaddle', { width: 0.2, height: 1, depth: 2 }, scene);
+          leftPaddle.position.x = -7;
+          const leftPaddleMaterial = new StandardMaterial('leftPaddleMaterial', scene);
+          leftPaddleMaterial.diffuseColor = new Color3(1, 0.2, 0.2);
+          leftPaddle.material = leftPaddleMaterial;
+          
+          // Right paddle (blue)
+          const rightPaddle = MeshBuilder.CreateBox('rightPaddle', { width: 0.2, height: 1, depth: 2 }, scene);
+          rightPaddle.position.x = 7;
+          const rightPaddleMaterial = new StandardMaterial('rightPaddleMaterial', scene);
+          rightPaddleMaterial.diffuseColor = new Color3(0.2, 0.2, 1);
+          rightPaddle.material = rightPaddleMaterial;
+          
+          // Ball
+          const ball = MeshBuilder.CreateSphere('ball', { diameter: 0.3 }, scene);
+          ball.position = Vector3.Zero();
+          const ballMaterial = new StandardMaterial('ballMaterial', scene);
+          ballMaterial.diffuseColor = new Color3(1, 1, 0);
+          ballMaterial.emissiveColor = new Color3(0.2, 0.2, 0);
+          ball.material = ballMaterial;
+          
+          console.log('✅ 3D Arena created');
+          
+          // Game physics
+          let ballVelocity = new Vector3(0.1, 0, 0.05);
+          const paddleSpeed = 0.15;
+          const bounds = { min: -4, max: 4 };
+          
+          // Input handling
+          const inputState = { up: false, down: false };
+          
+          document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            
+            switch(e.code) {
+              case 'ArrowUp':
+              case 'KeyW':
+                inputState.up = true;
+                e.preventDefault();
+                break;
+              case 'ArrowDown':
+              case 'KeyS':
+                inputState.down = true;
+                e.preventDefault();
+                break;
+              case 'Escape':
+                showMenu();
+                e.preventDefault();
+                break;
+            }
+          });
+          
+          document.addEventListener('keyup', (e) => {
+            switch(e.code) {
+              case 'ArrowUp':
+              case 'KeyW':
+                inputState.up = false;
+                e.preventDefault();
+                break;
+              case 'ArrowDown':
+              case 'KeyS':
+                inputState.down = false;
+                e.preventDefault();
+                break;
+            }
+          });
+          
+          // Game loop
+          function gameLoop() {
+            if (!gameActive) return;
+            
+            // Update paddle positions
+            if (inputState.up) {
+              if (leftPaddle.position.z < bounds.max) {
+                leftPaddle.position.z += paddleSpeed;
+              }
+              if (rightPaddle.position.z < bounds.max) {
+                rightPaddle.position.z += paddleSpeed;
+              }
+            }
+            if (inputState.down) {
+              if (leftPaddle.position.z > bounds.min) {
+                leftPaddle.position.z -= paddleSpeed;
+              }
+              if (rightPaddle.position.z > bounds.min) {
+                rightPaddle.position.z -= paddleSpeed;
+              }
+            }
+            
+            // Update ball position
+            ball.position.addInPlace(ballVelocity);
+            
+            // Ball collision with walls
+            if (ball.position.z >= 4.5 || ball.position.z <= -4.5) {
+              ballVelocity.z = -ballVelocity.z;
+            }
+            
+            // Ball collision with paddles
+            if (ball.position.x <= -6.5 && ball.position.x >= -7.5 && 
+                ball.position.z >= leftPaddle.position.z - 1 && 
+                ball.position.z <= leftPaddle.position.z + 1 &&
+                ballVelocity.x < 0) {
+              ballVelocity.x = -ballVelocity.x;
+              ballVelocity.z += (ball.position.z - leftPaddle.position.z) * 0.1;
+            }
+            
+            if (ball.position.x >= 6.5 && ball.position.x <= 7.5 && 
+                ball.position.z >= rightPaddle.position.z - 1 && 
+                ball.position.z <= rightPaddle.position.z + 1 &&
+                ballVelocity.x > 0) {
+              ballVelocity.x = -ballVelocity.x;
+              ballVelocity.z += (ball.position.z - rightPaddle.position.z) * 0.1;
+            }
+            
+            // Scoring
+            if (ball.position.x < -8) {
+              player2Score++;
+              ball.position = Vector3.Zero();
+              ballVelocity = new Vector3(0.1, 0, Math.random() * 0.1 - 0.05);
+              updateScore();
+            } else if (ball.position.x > 8) {
+              player1Score++;
+              ball.position = Vector3.Zero();
+              ballVelocity = new Vector3(-0.1, 0, Math.random() * 0.1 - 0.05);
+              updateScore();
+            }
+            
+            // Limit ball velocity
+            const maxSpeed = 0.3;
+            if (ballVelocity.length() > maxSpeed) {
+              ballVelocity.normalize().scaleInPlace(maxSpeed);
+            }
+            
+            requestAnimationFrame(gameLoop);
+          }
+          
+          // Start render loop
+          engine.runRenderLoop(() => {
+            scene.render();
+          });
+          
+          // Handle window resize
+          window.addEventListener('resize', () => {
+            engine.resize();
+          });
+          
+          gameScene = { engine, scene, leftPaddle, rightPaddle, ball };
+          
+          showStatus('Game Ready!', 'success');
+          setTimeout(() => {
+            showGame();
+            gameActive = true;
+            gameLoop();
+            statusElement.textContent = '🎮 Use Arrow Keys or WASD to play!';
+            console.log('🎉 Game started successfully!');
+          }, 1000);
+          
+        } catch (error) {
+          console.error('❌ Game creation error:', error);
+          showStatus(`Error: ${error.message}`, 'error');
+        }
+      }
+      
+      // Event handlers
+      hostBtn.addEventListener('click', () => {
+        console.log('🎮 Host Game clicked');
+        showStatus('Hosting game...', 'loading');
+        createGame();
+      });
+      
+      joinBtn.addEventListener('click', () => {
+        console.log('🎮 Join Game clicked');
+        joinForm.classList.toggle('hidden');
+      });
+      
+      connectBtn.addEventListener('click', () => {
+        const ip = document.getElementById('ip-input').value;
+        const port = document.getElementById('port-input').value;
+        console.log(`🌐 Connecting to ${ip}:${port}`);
+        showStatus(`Connecting to ${ip}:${port}...`, 'loading');
+        createGame();
+      });
+      
+      console.log('✅ CorysiaPong Direct Implementation loaded');
+      console.log('🎯 Click Host Game or Join Game to start!');
+    </script>
   </body>
 </html>
