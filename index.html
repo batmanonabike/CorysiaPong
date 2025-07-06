@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CorysiaPong</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="menu" class="menu">
+        <h1>CorysiaPong</h1>
+        <div class="menu-buttons">
+          <button id="host-game">Host Game</button>
+          <button id="join-game">Join Game</button>
+        </div>
+        <div id="join-form" class="join-form hidden">
+          <input type="text" id="ip-input" placeholder="IP Address" value="localhost" />
+          <input type="text" id="port-input" placeholder="Port" value="2567" />
+          <button id="connect-btn">Connect</button>
+        </div>
+      </div>
+      <div id="game-container" class="game-container hidden">
+        <canvas id="renderCanvas"></canvas>
+        <div id="game-ui" class="game-ui">
+          <div id="score">Player 1: 0 | Player 2: 0</div>
+          <div id="connection-status">Connected</div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
